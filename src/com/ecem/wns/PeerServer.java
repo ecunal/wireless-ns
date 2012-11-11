@@ -10,6 +10,9 @@ import java.net.Socket;
 public class PeerServer {
 
 	private int port;
+	
+	private final String[] messages = {"yes", "no", "alright", "good", "bad", "goodbye"};
+	private final String rekey = "rekey";
 
 	public PeerServer(int port) {
 		this.port = port;
@@ -41,19 +44,29 @@ public class PeerServer {
 				clientSocket.getInputStream()));
         
         String inputLine;
-        
-        out.println("Hi from server!");
-        int count = 1;
+        int count = 0;
 
+        System.out.println("Started!");
+        
+        out.println(messages[count]);
+        count++;
+        
         while((inputLine = in.readLine()) != null) {
         	
-        	if(count == 5) {
+        	System.out.println("I'm server and I just read " + inputLine);
+        	
+        	if(inputLine.equals("bye")) {
         		System.out.println("that's the end!");
         		break;
         	}
+        	else if(inputLine.equals(rekey)) {
+        		// do key altering stuff
+        		continue;
+        	}
         	
-        	System.out.println("I'm server and I just read " + inputLine + ", also ctr = " + count);
-        	out.println(inputLine + "...");
+        	out.println(messages[count]);
+        	
+        	//out.println("rekey");
         	count++;
         }
         
@@ -61,6 +74,10 @@ public class PeerServer {
         in.close();
         clientSocket.close();
         socket.close();
+	}
+	
+	public static void main(String[] args) throws NumberFormatException, IOException {
+		new PeerServer(Integer.parseInt(args[0])).connect();
 	}
 
 }

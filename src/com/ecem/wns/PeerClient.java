@@ -10,6 +10,9 @@ import java.net.UnknownHostException;
 public class PeerClient {
 
 	private int port;
+	
+	private final String[] messages = {"hi", "hello", "hey", "yey", "bye"};
+	private final String rekey = "rekey";
 
 	public PeerClient(int port) {
 		this.port = port;
@@ -38,21 +41,31 @@ public class PeerClient {
 
 		BufferedReader stdIn = new BufferedReader(new InputStreamReader(
 				System.in));
-		String fromServer;
-		String fromUser;
+		String fromServer, fromUser;
 		int count = 0;
 
 		while ((fromServer = in.readLine()) != null) {
-			System.out.println("I'm client and I just read " + fromServer + ", also c = " + count);
+			
+			System.out.println("I'm client and I just read " + fromServer);
+
 			if (count == 5) {
 				System.out.println("that's the end! -c");
 				break;
 			}
-
-			fromUser = stdIn.readLine();
-			if (fromUser != null) {
-				out.println(fromUser);
+			
+			if(fromServer.equals(rekey)) {
+				// do key altering stuff
+				continue;
 			}
+			
+			out.println(messages[count]);
+
+//			getting input from user and stuff
+			
+//			fromUser = stdIn.readLine();
+//			if (fromUser != null) {
+//				out.println(fromUser);
+//			}
 			
 			count++;
 		}
@@ -62,6 +75,10 @@ public class PeerClient {
 		stdIn.close();
 		socket.close();
 
+	}
+	
+	public static void main(String[] args) throws NumberFormatException, IOException {
+		new PeerClient(Integer.parseInt(args[0])).connect();
 	}
 
 }
