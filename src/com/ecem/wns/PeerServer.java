@@ -64,6 +64,7 @@ public class PeerServer {
         		continue;
         	}
         	
+        	out.println(rekey);
         	out.println(messages[count]);
         	
         	//out.println("rekey");

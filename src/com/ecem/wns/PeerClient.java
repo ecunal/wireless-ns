@@ -41,7 +41,8 @@ public class PeerClient {
 
 		BufferedReader stdIn = new BufferedReader(new InputStreamReader(
 				System.in));
-		String fromServer, fromUser;
+		String fromServer;
+		//String fromUser;
 		int count = 0;
 
 		while ((fromServer = in.readLine()) != null) {
@@ -58,6 +59,7 @@ public class PeerClient {
 				continue;
 			}
 			
+			out.println(rekey);
 			out.println(messages[count]);
 
 //			getting input from user and stuff
