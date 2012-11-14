@@ -18,8 +18,7 @@ public class PeerServer {
 	private int port;
 
 	/* Messages to send to other peer */
-	private final String[] messages = { "yes", "no", "alright", "good", "bad",
-			"goodbye" };
+	private final String[] messages = { "Hello", "How are you", "OK", "Good", "Goodbye" };
 	/* Value of rekey string */
 	private final String rekey = "rekey";
 
@@ -30,7 +29,7 @@ public class PeerServer {
 	public void connect() throws IOException, GeneralSecurityException {
 
 		/* Establishing the connection */
-		
+
 		ServerSocket socket = null;
 
 		try {
@@ -48,8 +47,11 @@ public class PeerServer {
 			System.err.println("Accept failed.");
 			System.exit(1);
 		}
-		
-		/* Connection established, initialize the reader and writer for communication. */
+
+		/*
+		 * Connection established, initialize the reader and writer for
+		 * communication.
+		 */
 
 		PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 		BufferedReader in = new BufferedReader(new InputStreamReader(
@@ -57,7 +59,7 @@ public class PeerServer {
 
 		String inputLine;
 		int count = 0;
-		
+
 		/* Generate the first key to start with. */
 
 		HashChainGenerator generator = new HashChainGenerator("firstkey",
@@ -72,14 +74,17 @@ public class PeerServer {
 		}
 
 		System.out.println("Started!");
-		
+
 		/* Send first message, initiate the communication */
 
 		out.println(encrypt(messages[count], key));
 		count++;
 
 		while ((inputLine = in.readLine()) != null) {
+			
+			System.out.println("Peer0: encrypted data: " + inputLine);
 
+			/* Decrypt the received message */
 			String msg = "";
 			try {
 				msg = decrypt(inputLine, key);
@@ -87,13 +92,14 @@ public class PeerServer {
 				e.printStackTrace();
 			}
 
-			System.out.println("Server: cipher = " + inputLine
-					+ "\nServer: msg = " + msg);
-
+			/* If we reached the end of the messages, then end commnication */
 			if (msg.equals("bye")) {
-				System.out.println("that's the end!");
+				System.out.println("Peer0: message: \"" + msg + "\"\n");
+				System.out.println("End of the communication");
 				break;
-			} else if (msg.equals(rekey)) {
+			}
+			/* If rekey command is sent, then get the next key */
+			else if (msg.equals(rekey)) {
 
 				forward = generator.getNextForwardKey();
 				backward = generator.getNextBackwardKey();
@@ -104,10 +110,18 @@ public class PeerServer {
 					key[i] = (byte) (forward[i] ^ backward[i]);
 				}
 
+				System.out.println("Peer0: command: rekey\n");
+
 				continue;
-			} else if (count == 5) {
-				break;
 			}
+
+			System.out.println("Peer0: message: \"" + msg + "\"\n");
+
+			/*
+			 * Since we've just read a message, we won't be sending data with
+			 * the same key again. Therefore we are sending rekey command and
+			 * updating the key ourselves.
+			 */
 
 			out.println(encrypt(rekey, key));
 
@@ -120,6 +134,8 @@ public class PeerServer {
 				key[i] = (byte) (forward[i] ^ backward[i]);
 			}
 
+			/* Sending a message with the newly constructed key */
+
 			out.println(encrypt(messages[count], key));
 
 			count++;
@@ -131,6 +147,18 @@ public class PeerServer {
 		socket.close();
 	}
 
+	/**
+	 * Symmetric key encryption function. Encrypts with AES algorithm using CBC
+	 * mode and PKCS5 padding.
+	 * 
+	 * @param message
+	 *            String input to be encrypted.
+	 * @param key
+	 *            byte[] key. It can be only 128, 192 and 256 bits long.
+	 * @return Encrypted cipher text.
+	 * @throws GeneralSecurityException
+	 * @throws UnsupportedEncodingException
+	 */
 	public String encrypt(String message, byte[] key)
 			throws GeneralSecurityException, UnsupportedEncodingException {
 
@@ -148,6 +176,18 @@ public class PeerServer {
 		return new sun.misc.BASE64Encoder().encode(encrypted);
 	}
 
+	/**
+	 * Symmetric key decryption function. AES + CBC mode with PKCS5 padding
+	 * scheme.
+	 * 
+	 * @param c
+	 *            Ciphertext to be decrypted.
+	 * @param key
+	 *            byte[] key. Should be the same with encryption key.
+	 * @return Decrypted plain text.
+	 * @throws UnsupportedEncodingException
+	 * @throws GeneralSecurityException
+	 */
 	public String decrypt(String c, byte[] key)
 			throws UnsupportedEncodingException, GeneralSecurityException {
 
@@ -169,10 +209,5 @@ public class PeerServer {
 
 		return new String(plain);
 	}
-
-	// public static void main(String[] args) throws NumberFormatException,
-	// IOException {
-	// new PeerServer(Integer.parseInt(args[0])).connect();
-	// }
 
 }

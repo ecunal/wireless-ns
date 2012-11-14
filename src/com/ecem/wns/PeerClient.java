@@ -17,7 +17,10 @@ public class PeerClient {
 
 	private int port;
 
-	private final String[] messages = { "hi", "hello", "hey", "yey", "bye" };
+	/* Messages to send to other peer */
+	private final String[] messages = { "Hi", "Alright", "And you?", "Well, then", "bye" };
+	
+	/* Value of rekey string */
 	private final String rekey = "rekey";
 
 	public PeerClient(int port) {
@@ -25,6 +28,8 @@ public class PeerClient {
 	}
 
 	public void connect() throws IOException, GeneralSecurityException {
+		
+		/* Establishing the connection */
 
 		Socket socket = null;
 		PrintWriter out = null;
@@ -45,8 +50,14 @@ public class PeerClient {
 			System.exit(1);
 		}
 
+		/*
+		 * Connection established, reader and writer are ready for communication.
+		 */
+		
 		String fromServer;
 		int count = 0;
+		
+		/* Generating the first key from hash chains. */
 
 		HashChainGenerator generator = new HashChainGenerator("firstkey",
 				"secondkey", 100);
@@ -58,9 +69,14 @@ public class PeerClient {
 		for (int i = 0; i < key.length; i++) {
 			key[i] = (byte) (forward[i] ^ backward[i]);
 		}
+		
+		/* Beginning reading from other peer. */
 
 		while ((fromServer = in.readLine()) != null) {
+			
+			System.out.println("Peer1: encrypted data: " + fromServer);
 
+			/* Decrypt the received message */
 			String msg = "";
 			try {
 				msg = decrypt(fromServer, key);
@@ -68,14 +84,14 @@ public class PeerClient {
 				e.printStackTrace();
 			}
 
-			System.out.println("Client: cipher = " + fromServer
-					+ "\nClient: msg = " + msg);
-
+			/* If the PeerServer does not end the communication,
+			 * since it is the end of possible messages, we should end it.
+			 */
 			if (count == 5) {
 				System.out.println("that's the end! -c");
 				break;
 			}
-
+			/* If rekey command is sent, then get the next key */
 			if (msg.equals(rekey)) {
 
 				forward = generator.getNextForwardKey();
@@ -86,9 +102,19 @@ public class PeerClient {
 				for (int i = 0; i < key.length; i++) {
 					key[i] = (byte) (forward[i] ^ backward[i]);
 				}
+				
+				System.out.println("Peer1: command: rekey\n");
 
 				continue;
 			}
+			
+			System.out.println("Peer1: message: \"" + msg + "\"\n");
+
+			/*
+			 * Since we've just read a message, we won't be sending data with
+			 * the same key again. Therefore we are sending rekey command and
+			 * updating the key ourselves.
+			 */
 
 			out.println(encrypt(rekey, key));
 			
@@ -101,6 +127,8 @@ public class PeerClient {
 				key[i] = (byte) (forward[i] ^ backward[i]);
 			}
 			
+			/* Sending a message with the newly constructed key */
+			
 			out.println(encrypt(messages[count], key));
 
 			count++;
@@ -112,6 +140,19 @@ public class PeerClient {
 
 	}
 
+	/**
+	 * Symmetric key encryption function.
+	 * Encrypts with AES algorithm using CBC mode and PKCS5 padding.
+	 * 
+	 * @param message
+	 * 			String input to be encrypted.
+	 * @param key
+	 * 			byte[] key. It can be only 128, 192 and 256 bits long.
+	 * @return
+	 * 			Encrypted cipher text.
+	 * @throws GeneralSecurityException
+	 * @throws UnsupportedEncodingException
+	 */
 	public String encrypt(String message, byte[] key)
 			throws GeneralSecurityException, UnsupportedEncodingException {
 
@@ -129,6 +170,18 @@ public class PeerClient {
 		return new sun.misc.BASE64Encoder().encode(encrypted);
 	}
 
+	/**
+	 * Symmetric key decryption function. AES + CBC mode with PKCS5 padding scheme.
+	 * 
+	 * @param c
+	 * 			Ciphertext to be decrypted.
+	 * @param key
+	 * 			byte[] key. Should be the same with encryption key.
+	 * @return
+	 * 			Decrypted plain text.
+	 * @throws UnsupportedEncodingException
+	 * @throws GeneralSecurityException
+	 */
 	public String decrypt(String c, byte[] key)
 			throws UnsupportedEncodingException, GeneralSecurityException {
 
@@ -150,11 +203,5 @@ public class PeerClient {
 
 		return new String(plain);
 	}
-	
-//
-//	public static void main(String[] args) throws NumberFormatException,
-//			IOException {
-//		new PeerClient(Integer.parseInt(args[0])).connect();
-//	}
 
 }
