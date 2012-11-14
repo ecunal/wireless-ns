@@ -147,7 +147,6 @@ public class PeerClient {
 
 		cipher.init(Cipher.DECRYPT_MODE, keyspec, ivspec);
 		byte[] plain = cipher.doFinal(cipherText);
-		System.out.println("plain text: " + new String(plain));
 
 		return new String(plain);
 	}

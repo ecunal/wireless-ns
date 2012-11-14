@@ -17,8 +17,10 @@ public class PeerServer {
 
 	private int port;
 
+	/* Messages to send to other peer */
 	private final String[] messages = { "yes", "no", "alright", "good", "bad",
 			"goodbye" };
+	/* Value of rekey string */
 	private final String rekey = "rekey";
 
 	public PeerServer(int port) {
@@ -27,6 +29,8 @@ public class PeerServer {
 
 	public void connect() throws IOException, GeneralSecurityException {
 
+		/* Establishing the connection */
+		
 		ServerSocket socket = null;
 
 		try {
@@ -44,6 +48,8 @@ public class PeerServer {
 			System.err.println("Accept failed.");
 			System.exit(1);
 		}
+		
+		/* Connection established, initialize the reader and writer for communication. */
 
 		PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 		BufferedReader in = new BufferedReader(new InputStreamReader(
@@ -51,6 +57,8 @@ public class PeerServer {
 
 		String inputLine;
 		int count = 0;
+		
+		/* Generate the first key to start with. */
 
 		HashChainGenerator generator = new HashChainGenerator("firstkey",
 				"secondkey", 100);
@@ -64,6 +72,8 @@ public class PeerServer {
 		}
 
 		System.out.println("Started!");
+		
+		/* Send first message, initiate the communication */
 
 		out.println(encrypt(messages[count], key));
 		count++;
@@ -83,8 +93,7 @@ public class PeerServer {
 			if (msg.equals("bye")) {
 				System.out.println("that's the end!");
 				break;
-			}
-			else if (msg.equals(rekey)) {
+			} else if (msg.equals(rekey)) {
 
 				forward = generator.getNextForwardKey();
 				backward = generator.getNextBackwardKey();
@@ -96,13 +105,12 @@ public class PeerServer {
 				}
 
 				continue;
-			}
-			else if (count == 5) {
+			} else if (count == 5) {
 				break;
 			}
 
 			out.println(encrypt(rekey, key));
-			
+
 			forward = generator.getNextForwardKey();
 			backward = generator.getNextBackwardKey();
 			generator.incrementCounter();
@@ -111,7 +119,7 @@ public class PeerServer {
 			for (int i = 0; i < key.length; i++) {
 				key[i] = (byte) (forward[i] ^ backward[i]);
 			}
-			
+
 			out.println(encrypt(messages[count], key));
 
 			count++;
@@ -158,7 +166,6 @@ public class PeerServer {
 
 		cipher.init(Cipher.DECRYPT_MODE, keyspec, ivspec);
 		byte[] plain = cipher.doFinal(cipherText);
-		System.out.println("plain text: " + new String(plain));
 
 		return new String(plain);
 	}

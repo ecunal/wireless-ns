@@ -42,6 +42,15 @@ public class HashChainGenerator {
 		counter++;
 	}
 
+	/**
+	 * Generate forward hash chain and store it inside forwardHashChain array.
+	 * Uses SHA-256 cryptographic hash function.
+	 * 
+	 * @param key
+	 * 			First key string to start the hashing 
+	 * @throws UnsupportedEncodingException
+	 * @throws NoSuchAlgorithmException
+	 */
 	private void generateForwardChain(String key)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
 
@@ -57,6 +66,15 @@ public class HashChainGenerator {
 		}
 	}
 
+	/**
+	 * Generate the hash chain and store it inside backwardHashChain backwards.
+	 * Uses SHA-256 cryptographic hashing.
+	 * 
+	 * @param key
+	 * 		First key string to hash.
+	 * @throws NoSuchAlgorithmException
+	 * @throws UnsupportedEncodingException
+	 */
 	private void generateBackwardChain(String key)
 			throws NoSuchAlgorithmException, UnsupportedEncodingException {
 
@@ -71,28 +89,5 @@ public class HashChainGenerator {
 			backwardHashChain[i] = digest;
 		}
 	}
-
-/*		public static String toBinaryString(byte[] digest) {
-
-		StringBuilder sb = new StringBuilder();
-
-		for (byte b : digest) {
-
-			String temp = Integer.toBinaryString(b);
-			int difference = 8 - temp.length();
-
-			if (difference < 0) {
-				sb.append(temp.subSequence(temp.length() - 9, temp.length() - 1));
-			} else {
-				while (difference > 0) {
-					sb.append(0);
-					difference--;
-				}
-				sb.append(temp);
-			}
-		}
-
-		return sb.toString();
-	}*/
 
 }
