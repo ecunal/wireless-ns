@@ -1,6 +1,7 @@
 package com.ecem.wns;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 public class Main {
 
@@ -10,13 +11,13 @@ public class Main {
 	 */
 	public static void main(String[] args) throws InterruptedException {
 		
-		final int port = 3232;
+		final int port = 8845;
 		
 		Thread server = new Thread() {
 			public void run() {
 				try {
 					(new PeerServer(port)).connect();
-				} catch (IOException e) {
+				} catch (IOException | GeneralSecurityException e) {
 					e.printStackTrace();
 				}
 			}
@@ -26,7 +27,7 @@ public class Main {
 			public void run() {
 				try {
 					(new PeerClient(port)).connect();
-				} catch (IOException e) {
+				} catch (IOException | GeneralSecurityException e) {
 					e.printStackTrace();
 				}
 			}

@@ -6,15 +6,17 @@ import java.security.NoSuchAlgorithmException;
 
 public class HashChainGenerator {
 
-	private int n; /* array length */
+	private int n, /* array length */ counter /* which key to return now */;
 
-	private String[] forwardHashChain, backwardHashChain;
+	private byte[][] forwardHashChain, backwardHashChain;
 
 	public HashChainGenerator(String forwardKey, String backwardKey, int n) {
-		this.n = n;
 
-		forwardHashChain = new String[n];
-		backwardHashChain = new String[n];
+		this.n = n;
+		counter = 0;
+		
+		forwardHashChain = new byte[n][];
+		backwardHashChain = new byte[n][];
 
 		try {
 			generateForwardChain(forwardKey);
@@ -27,6 +29,18 @@ public class HashChainGenerator {
 			e.printStackTrace();
 		}
 	}
+	
+	public byte[] getNextForwardKey() {
+		return forwardHashChain[counter];
+	}
+	
+	public byte[] getNextBackwardKey() {
+		return backwardHashChain[counter];
+	}
+	
+	public void incrementCounter() {
+		counter++;
+	}
 
 	private void generateForwardChain(String key)
 			throws UnsupportedEncodingException, NoSuchAlgorithmException {
@@ -34,12 +48,12 @@ public class HashChainGenerator {
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		md.update(key.getBytes("UTF-8"));
 		byte[] digest = md.digest();
-		forwardHashChain[0] = toBinaryString(digest);
+		forwardHashChain[0] = digest;
 
 		for (int i = 1; i < n; i++) {
 			md.update(digest);
 			digest = md.digest();
-			forwardHashChain[i] = toBinaryString(digest);
+			forwardHashChain[i] = digest;
 		}
 	}
 
@@ -49,16 +63,16 @@ public class HashChainGenerator {
 		MessageDigest md = MessageDigest.getInstance("SHA-256");
 		md.update(key.getBytes("UTF-8"));
 		byte[] digest = md.digest();
-		backwardHashChain[n - 1] = toBinaryString(digest);
+		backwardHashChain[n - 1] = digest;
 
 		for (int i = n - 2; i >= 0; i--) {
 			md.update(digest);
 			digest = md.digest();
-			backwardHashChain[i] = toBinaryString(digest);
+			backwardHashChain[i] = digest;
 		}
 	}
 
-	public static String toBinaryString(byte[] digest) {
+/*		public static String toBinaryString(byte[] digest) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -79,6 +93,6 @@ public class HashChainGenerator {
 		}
 
 		return sb.toString();
-	}
+	}*/
 
 }

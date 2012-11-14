@@ -4,21 +4,27 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class PeerClient {
 
 	private int port;
-	
-	private final String[] messages = {"hi", "hello", "hey", "yey", "bye"};
+
+	private final String[] messages = { "hi", "hello", "hey", "yey", "bye" };
 	private final String rekey = "rekey";
 
 	public PeerClient(int port) {
 		this.port = port;
 	}
 
-	public void connect() throws IOException {
+	public void connect() throws IOException, GeneralSecurityException {
 
 		Socket socket = null;
 		PrintWriter out = null;
@@ -39,48 +45,110 @@ public class PeerClient {
 			System.exit(1);
 		}
 
-		BufferedReader stdIn = new BufferedReader(new InputStreamReader(
-				System.in));
 		String fromServer;
-		//String fromUser;
 		int count = 0;
 
+		HashChainGenerator generator = new HashChainGenerator("firstkey",
+				"secondkey", 100);
+		byte[] forward = generator.getNextForwardKey();
+		byte[] backward = generator.getNextBackwardKey();
+		generator.incrementCounter();
+
+		byte[] key = new byte[forward.length];
+		for (int i = 0; i < key.length; i++) {
+			key[i] = (byte) (forward[i] ^ backward[i]);
+		}
+
 		while ((fromServer = in.readLine()) != null) {
-			
-			System.out.println("I'm client and I just read " + fromServer);
+
+			String msg = "";
+			try {
+				msg = decrypt(fromServer, key);
+			} catch (GeneralSecurityException e) {
+				e.printStackTrace();
+			}
+
+			System.out.println("Client: cipher = " + fromServer
+					+ "\nClient: msg = " + msg);
 
 			if (count == 5) {
 				System.out.println("that's the end! -c");
 				break;
 			}
-			
-			if(fromServer.equals(rekey)) {
-				// do key altering stuff
+
+			if (msg.equals(rekey)) {
+
+				forward = generator.getNextForwardKey();
+				backward = generator.getNextBackwardKey();
+				generator.incrementCounter();
+
+				key = new byte[forward.length];
+				for (int i = 0; i < key.length; i++) {
+					key[i] = (byte) (forward[i] ^ backward[i]);
+				}
+
 				continue;
 			}
-			
-			out.println(rekey);
-			out.println(messages[count]);
 
-//			getting input from user and stuff
-			
-//			fromUser = stdIn.readLine();
-//			if (fromUser != null) {
-//				out.println(fromUser);
-//			}
-			
+			out.println(encrypt(rekey, key));
+			out.println(encrypt(messages[count], key));
+
 			count++;
 		}
 
 		out.close();
 		in.close();
-		stdIn.close();
 		socket.close();
 
 	}
-	
-	public static void main(String[] args) throws NumberFormatException, IOException {
-		new PeerClient(Integer.parseInt(args[0])).connect();
+
+	public String encrypt(String message, byte[] key)
+			throws GeneralSecurityException, UnsupportedEncodingException {
+
+		byte[] input = message.getBytes("UTF-8");
+
+		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		System.out.println("input text : " + new String(input));
+
+		SecretKeySpec keyspec = new SecretKeySpec(key, "AES");
+		byte[] iv = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		IvParameterSpec ivspec = new IvParameterSpec(iv);
+
+		cipher.init(Cipher.ENCRYPT_MODE, keyspec, ivspec);
+		byte[] encrypted = cipher.doFinal(input);
+		System.out.println("cipher text: "
+				+ new sun.misc.BASE64Encoder().encode(encrypted));
+
+		return new sun.misc.BASE64Encoder().encode(encrypted);
 	}
+
+	public String decrypt(String c, byte[] key)
+			throws UnsupportedEncodingException, GeneralSecurityException {
+
+		byte[] cipherText = null;
+		try {
+			cipherText = new sun.misc.BASE64Decoder().decodeBuffer(c);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+		SecretKeySpec keyspec = new SecretKeySpec(key, "AES");
+		byte[] iv = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		IvParameterSpec ivspec = new IvParameterSpec(iv);
+
+		cipher.init(Cipher.DECRYPT_MODE, keyspec, ivspec);
+		byte[] plain = cipher.doFinal(cipherText);
+		System.out.println("plain text: " + new String(plain));
+
+		return new String(plain);
+	}
+	
+//
+//	public static void main(String[] args) throws NumberFormatException,
+//			IOException {
+//		new PeerClient(Integer.parseInt(args[0])).connect();
+//	}
 
 }
