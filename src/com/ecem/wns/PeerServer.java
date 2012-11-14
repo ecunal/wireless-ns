@@ -102,6 +102,16 @@ public class PeerServer {
 			}
 
 			out.println(encrypt(rekey, key));
+			
+			forward = generator.getNextForwardKey();
+			backward = generator.getNextBackwardKey();
+			generator.incrementCounter();
+
+			key = new byte[forward.length];
+			for (int i = 0; i < key.length; i++) {
+				key[i] = (byte) (forward[i] ^ backward[i]);
+			}
+			
 			out.println(encrypt(messages[count], key));
 
 			count++;
@@ -119,7 +129,6 @@ public class PeerServer {
 		byte[] input = message.getBytes("UTF-8");
 
 		Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		System.out.println("input text : " + new String(input));
 
 		SecretKeySpec keyspec = new SecretKeySpec(key, "AES");
 		byte[] iv = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -127,8 +136,6 @@ public class PeerServer {
 
 		cipher.init(Cipher.ENCRYPT_MODE, keyspec, ivspec);
 		byte[] encrypted = cipher.doFinal(input);
-		System.out.println("cipher text: "
-				+ new sun.misc.BASE64Encoder().encode(encrypted));
 
 		return new sun.misc.BASE64Encoder().encode(encrypted);
 	}
