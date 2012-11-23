@@ -16,7 +16,11 @@ public class Main {
 
 		System.out.println("Enter the message in hex format:");
 
-		msg = s.nextLine();
+		msg = s.nextLine().toUpperCase();
+		
+		if(msg.length()%2 == 1) {
+			msg = "0" + msg;
+		}
 
 		System.out.println("How many bits will change in the output?");
 
@@ -26,35 +30,55 @@ public class Main {
 		System.out.println("Enter the bit locations:");
 
 		for (int i = 0; i < count; i++) {
-			taps.put(Integer.parseInt(s.nextLine()), 1);
+
+			String input = s.nextLine();
+
+			if (Integer.parseInt(input) > msg.length() * 4) {
+				System.out
+						.println("Specified bit location does not exist in the message." +
+								"\nEnter another location:");
+				i--;
+				continue;
+			}
+
+			taps.put(Integer.parseInt(input), 1);
 		}
 		StringBuilder sb = new StringBuilder();
 
 		for (int i = 0; i < msg.length() * 4; i++) {
-			if(taps.containsKey((msg.length() * 4) - i)) {
+			if (taps.containsKey((msg.length() * 4) - i)) {
 				sb.append(1);
-			}
-			else {
+			} else {
 				sb.append(0);
 			}
 		}
-		
-		deltamsg = Long.toHexString(Long.parseLong(sb.toString(), 2));
+
+		deltamsg = Long.toHexString(Long.parseLong(sb.toString(), 2)).toUpperCase();
+
+		if (deltamsg.length() < msg.length()) {
+			int diff = msg.length() - deltamsg.length();
+
+			while (diff > 0) {
+				deltamsg = "0" + deltamsg;
+				diff--;
+			}
+		}
 
 		receiver(attacker(sender(msg), deltamsg));
 
+		s.close();
 	}
 
 	public static String sender(String msg) {
 
 		System.out.println("***\tSENDER\t***\n");
 
-		System.out.println("Message to send: " + msg);
+		System.out.println("Message to send:\t" + msg);
 
 		String crc = CRCCalculator.calculate(msg);
 
-		System.out.println("Native CRC32 checksum of this message: " + crc);
-		System.out.println("Message | CRC: " + msg + crc);
+		System.out.println("Native CRC32 checksum:\t" + crc);
+		System.out.println("Message | CRC:\t\t" + msg + crc);
 
 		byte[] msgBytes = CRCCalculator.hexStringToByteArray(msg);
 		byte[] crcBytes = CRCCalculator.hexStringToByteArray(crc);
@@ -70,7 +94,7 @@ public class Main {
 		}
 
 		String cipher = CRCCalculator.byteArrayToString(cipherBytes);
-		System.out.println("Encrypted message ( M | CRC(M) XOR K): " + cipher);
+		System.out.println("Encrypted message:\t" + cipher + "\n(M | CRC(M) XOR K)");
 
 		return cipher;
 	}
@@ -79,16 +103,16 @@ public class Main {
 
 		System.out.println("\n\n***\tATTACKER\t***\n");
 
-		System.out.println("Attacker received: " + cipher);
-		System.out.println("Hex represantation of the bits to be changed: "
-				+ deltaM);
+		System.out.println("Attacker received:\t" + cipher);
+		System.out.println("Hex of bits to change:\t" + deltaM);
 
-		System.out
-				.println("CRC of delta M: " + CRCCalculator.calculate(deltaM));
+		String crc = CRCCalculator.calculate(deltaM);
+		
+		System.out.println("CRC of delta M:\t\t" + crc);
 
-		deltaM += CRCCalculator.calculate(deltaM);
+		deltaM += crc;
 
-		System.out.println("Delta M | CRC(Delta M) : " + deltaM);
+		System.out.println("Delta M | CRC(Delta M):\t" + deltaM);
 
 		byte[] deltaMBytes = CRCCalculator.hexStringToByteArray(deltaM);
 		byte[] cipherBytes = CRCCalculator.hexStringToByteArray(cipher);
@@ -100,8 +124,7 @@ public class Main {
 
 		String newCipher = CRCCalculator.byteArrayToString(newCipherBytes);
 
-		System.out.println("New ciphertext that attacker prepares: "
-				+ newCipher);
+		System.out.println("New ciphertext to send:\t" + newCipher);
 
 		return newCipher;
 	}
@@ -130,10 +153,12 @@ public class Main {
 		String crc = CRCCalculator.byteArrayToString(Arrays.copyOfRange(
 				messageBytes, messageBytes.length - 4, messageBytes.length));
 
-		String newcrc = CRCCalculator.calculate(plain);
-
 		System.out.println("Received message:\t" + plain
-				+ "\nReceived CRC:\t\t" + crc + "\nCalculated CRC:\t\t"
+				+ "\nReceived CRC:\t\t" + crc);
+		
+		String newcrc = CRCCalculator.calculate(plain);
+		
+		System.out.println("Calculated CRC:\t\t"
 				+ newcrc);
 
 		if (crc.equals(newcrc))

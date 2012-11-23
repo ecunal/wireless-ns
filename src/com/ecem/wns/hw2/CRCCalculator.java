@@ -24,20 +24,42 @@ public class CRCCalculator {
 			}
 			i++;
 		}
-		
+
+		System.out.println("--CRC input:\t\t" + hex);
+		System.out.println("--Prepared input:\t" + byteArrayToString(hexByte));
+
 		/* Calculate the CRC32 checksum */
-		
+
 		Checksum crc32 = new CRC32();
-		
+
 		crc32.update(hexByte, 0, hexByte.length);
-		
+
 		int checksum = (int) crc32.getValue();
+
+		String stringcrc = Long.toHexString(checksum).toUpperCase();
+		
+		if(stringcrc.length() > 8) {
+			stringcrc = stringcrc.substring(stringcrc.length() - 8,
+					stringcrc.length());
+		}
+		
+		System.out.println("--Produced output:\t"
+				+ stringcrc);
 		
 		/* Process the output */
-		
+
 		checksum = complementInt(reverseInt(checksum));
 		
-		return Long.toHexString(checksum).toUpperCase();
+		stringcrc = Long.toHexString(checksum).toUpperCase();
+
+		if(stringcrc.length() > 8) {
+			stringcrc = stringcrc.substring(stringcrc.length() - 8,
+					stringcrc.length());
+		}
+		
+		System.out.println("--Processed output:\t" + stringcrc);
+
+		return stringcrc;
 	}
 
 	public static byte[] hexStringToByteArray(String s) {
