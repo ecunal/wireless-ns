@@ -2,7 +2,6 @@ package com.ecem.rfid;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
@@ -24,9 +23,7 @@ public class Reader {
 		tagHashes = new byte[tagIDs.length][];
 
 		for (int i = 0; i < tagIDs.length; i++) {
-			MessageDigest md = MessageDigest.getInstance("SHA-256");
-			md.update(tagIDs[i].toString().getBytes("UTF-8"));
-			tagHashes[i] = md.digest();
+			tagHashes[i] = Protocol.hash(this.tagIDs[i].toString());
 		}
 
 		p = BigInteger.valueOf(2).pow(128);
@@ -43,9 +40,6 @@ public class Reader {
 				BigInteger.valueOf(4))[1].equals(BigInteger.ZERO)) {
 			q = q.nextProbablePrime();
 		}
-//		
-//		System.out.println(p);
-//		System.out.println(q);
 
 		n = p.multiply(q);
 	}
@@ -66,21 +60,17 @@ public class Reader {
 
 		BigInteger x = null, t = null;
 
-		MessageDigest mdd;
-
 		for (BigInteger xi : x_i) {
 			for (BigInteger ti : t_i) {
 				
 				String c = xi.toString() + ti.toString();
-				
-				mdd = MessageDigest.getInstance("SHA-256");
-				mdd.update(c.getBytes("UTF-8"));
-				byte[] h = mdd.digest();
+				byte[] h = Protocol.hash(c);
 				
 				if (Arrays.toString(h).equals(Arrays.toString(M))) {
-					System.out.println("burdaa");
+					
 					x = xi;
 					t = ti;
+					
 					break;
 				}
 			}
@@ -88,18 +78,10 @@ public class Reader {
 		
 		if(x != null && t != null) {
 			
-			System.out.println(x.bitLength());
-			System.out.println(t.bitLength());
-			
 			byte[] x_array = Protocol.bigIntToByte(x);
 			byte[] t_array = Protocol.bigIntToByte(t);
 			
-			System.out.println(x_array.length);
-			System.out.println(t_array.length);
-			
-			MessageDigest md = MessageDigest.getInstance("SHA-256");
-			md.update(t_array.toString().getBytes("UTF-8"));
-			byte[] hasht = md.digest();
+			byte[] hasht = Protocol.hash(t_array.toString());
 			
 			byte[] hash_tid = new byte[hasht.length];
 
@@ -107,27 +89,11 @@ public class Reader {
 
 				hash_tid[i] = (byte) (x_array[i] ^ s[i] ^ hasht[i] ^ t_array[i]);
 			}
-			
-			System.out.println(Arrays.toString(hash_tid));
-			System.out.println(tagHashes.length);
-			System.out.println(Arrays.toString(tagHashes[0]));
 		}
 		else {
 			System.out.println("ATTAAACK!!!!!111");
 		}
 		
-//		System.out.println(x);
-//		System.out.println(t);
-	}
-
-	/* Getters & Setters */
-
-	public BigInteger[] getTagIDs() {
-		return tagIDs;
-	}
-
-	public void setTagIDs(BigInteger[] tagIDs) {
-		this.tagIDs = tagIDs;
 	}
 
 }

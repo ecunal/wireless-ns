@@ -2,7 +2,6 @@ package com.ecem.rfid;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class Tag {
@@ -19,22 +18,14 @@ public class Tag {
 		this.T_ID = T_ID;
 		this.n = n;
 
-		/* Generate hash of T_ID */
-
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-		md.update(T_ID.toString().getBytes("UTF-8"));
-		hash_TID = md.digest();
+		hash_TID = Protocol.hash(this.T_ID.toString());
 	}
 
 	public void xtm(byte[] s) throws UnsupportedEncodingException,
 			NoSuchAlgorithmException {
 		
 		byte[] t = Protocol.generateRandomChallenge(32);
-		
-		MessageDigest md = MessageDigest.getInstance("SHA-256");
-		md.update(t.toString().getBytes("UTF-8"));
-		byte[] hasht = md.digest();
-		
+		byte[] hasht = Protocol.hash(t.toString());
 		byte[] x = new byte[t.length];
 
 		for (int i = 0; i < t.length; i++) {
@@ -50,11 +41,8 @@ public class Tag {
 		
 		String c = bigX.toString() + bigT.toString();
 		
-		md = MessageDigest.getInstance("SHA-256");
-		md.update(c.getBytes("UTF-8"));
-		M = md.digest();
+		M = Protocol.hash(c);
 		
-		// x kare t kare hesaplanan yer
 		bigX = bigX.modPow(BigInteger.valueOf(2), n);
 		bigT = bigT.modPow(BigInteger.valueOf(2), n);
 	}
@@ -71,30 +59,6 @@ public class Tag {
 
 	public byte[] getM() {
 		return M;
-	}
-
-	public BigInteger getT_ID() {
-		return T_ID;
-	}
-
-	protected void setT_ID(BigInteger t_ID) {
-		T_ID = t_ID;
-	}
-
-	public BigInteger getN() {
-		return n;
-	}
-
-	protected void setN(BigInteger n) {
-		this.n = n;
-	}
-
-	public byte[] getHash_TID() {
-		return hash_TID;
-	}
-
-	protected void setHash_TID(byte[] hash_TID) {
-		this.hash_TID = hash_TID;
 	}
 
 }

@@ -8,6 +8,8 @@ public class Simulation {
 
 	public static void main(String[] args) throws NoSuchAlgorithmException,
 			UnsupportedEncodingException {
+		
+		
 
 		Reader reader = new Reader(new BigInteger[] { BigInteger.ONE });
 
@@ -17,7 +19,12 @@ public class Simulation {
 
 		tag.xtm(s);
 
+		long start = System.currentTimeMillis();
 		reader.solveXT(tag.getBigX(), tag.getBigT(), tag.getM());
+		
+		long end = System.currentTimeMillis();
+		
+		System.out.println(end-start);
 
 	}
 }
